@@ -120,11 +120,18 @@ def main():
 
                 # --- Display 2D Heatmap with Center of Mass ---
                 st.subheader("2D Heatmap View")
+                
+                # **NEW**: Add a checkbox to control the center of mass visibility
+                show_com = st.checkbox("Show Center of Mass on 2D Map", value=True)
+                
                 fig_2d, ax2d = plt.subplots()
                 im = ax2d.imshow(normalized, cmap='jet', origin='lower')
-                # Add a marker for the center of mass
-                ax2d.plot(center_x, center_y, 'r+', markersize=12, label=f'Center of Mass ({center_x:.1f}, {center_y:.1f})')
-                ax2d.legend()
+                
+                # **NEW**: Conditionally plot the marker and legend
+                if show_com:
+                    ax2d.plot(center_x, center_y, 'r+', markersize=12, label=f'Center of Mass ({center_x:.1f}, {center_y:.1f})')
+                    ax2d.legend()
+                    
                 plt.colorbar(im, ax=ax2d, label='Normalized Density')
                 ax2d.set_title("2D Density Profile")
                 st.pyplot(fig_2d)

@@ -4,6 +4,19 @@ import cv2
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 from skimage import io, exposure, util, color
+from scipy import ndimage
+
+# --- Helper Function for Advanced Analysis ---
+def perform_advanced_analysis(image):
+    """Calculates center of mass and 1D profiles from a normalized 2D image."""
+    # The result is in (row, column) format, which corresponds to (y, x)
+    cy, cx = ndimage.center_of_mass(image)
+
+    # Get 1D profiles by summing along axes. This integrates the signal.
+    horizontal_profile = np.sum(image, axis=0) # Sum over rows to get profile vs. x
+    vertical_profile = np.sum(image, axis=1)   # Sum over columns to get profile vs. y
+    
+    return (cx, cy), horizontal_profile, vertical_profile
 
 # --- Main App ---
 def main():
@@ -12,7 +25,6 @@ def main():
     st.write("Upload an image, edit it using the sidebar controls, and then click 'Analyze' to generate its density profile.")
 
     # --- State Management ---
-    # Resets the analysis when a new file is uploaded
     def reset_analysis():
         if 'analysis_triggered' in st.session_state:
             st.session_state.analysis_triggered = False
@@ -29,7 +41,7 @@ def main():
         original_image = io.imread(uploaded_file)
         
         # Pre-process: Ensure image is float RGB
-        if original_image.shape[-1] == 4: # RGBA
+        if original_image.shape[-1] == 4: # Handle RGBA
             original_image = color.rgba2rgb(original_image)
         original_image = util.img_as_float(original_image)
         
@@ -95,11 +107,39 @@ def main():
                 # Resize and normalize
                 resized = cv2.resize(gray_img, (200, 200))
                 normalized = resized / 255.0
-                
-                st.subheader("Processed Grayscale for Analysis")
-                st.image(resized, channels="GRAY", caption="Resized & Grayscale", width=300)
 
-                # 3D Plotly Surface Plot
+                # --- Call the new analysis function ---
+                (center_x, center_y), h_profile, v_profile = perform_advanced_analysis(normalized)
+
+                # --- Display Quantitative Metrics ---
+                st.subheader("📊 Quantitative Results")
+                metric_col1, metric_col2 = st.columns(2)
+                metric_col1.metric("Center of Mass (X)", f"{center_x:.2f} px")
+                metric_col2.metric("Center of Mass (Y)", f"{center_y:.2f} px")
+                st.markdown("---")
+
+                # --- Display 2D Heatmap with Center of Mass ---
+                st.subheader("2D Heatmap View")
+                fig_2d, ax2d = plt.subplots()
+                im = ax2d.imshow(normalized, cmap='jet', origin='lower')
+                # Add a marker for the center of mass
+                ax2d.plot(center_x, center_y, 'r+', markersize=12, label=f'Center of Mass ({center_x:.1f}, {center_y:.1f})')
+                ax2d.legend()
+                plt.colorbar(im, ax=ax2d, label='Normalized Density')
+                ax2d.set_title("2D Density Profile")
+                st.pyplot(fig_2d)
+
+                # --- Display 1D Profiles ---
+                st.subheader("1D Density Profiles")
+                prof_col1, prof_col2 = st.columns(2)
+                with prof_col1:
+                    st.write("Horizontal Profile")
+                    st.line_chart(h_profile)
+                with prof_col2:
+                    st.write("Vertical Profile")
+                    st.line_chart(v_profile)
+                
+                # --- Display 3D Plotly Surface Plot ---
                 st.subheader("Interactive 3D Density Profile")
                 fig_3d = go.Figure(data=[go.Surface(z=normalized, colorscale='Jet')])
                 fig_3d.update_layout(
@@ -109,14 +149,6 @@ def main():
                     margin=dict(l=0, r=0, b=0, t=40)
                 )
                 st.plotly_chart(fig_3d, use_container_width=True)
-                
-                # 2D Matplotlib Heatmap
-                st.subheader("2D Heatmap View")
-                fig_2d, ax2d = plt.subplots()
-                im = ax2d.imshow(normalized, cmap='jet', origin='lower')
-                plt.colorbar(im, ax=ax2d, label='Normalized Density')
-                ax2d.set_title("2D Density Profile")
-                st.pyplot(fig_2d)
 
             else:
                 st.error("Cannot analyze an empty image. Please adjust the crop dimensions.")

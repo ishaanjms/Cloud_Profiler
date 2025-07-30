@@ -21,7 +21,7 @@ def perform_advanced_analysis(image):
 # --- Main App ---
 def main():
     st.set_page_config(layout="wide", page_title="Image Editor & Profiler")
-    st.title("🔬 Image Editor & Density Profiler")
+    st.title("Image Editor & Density Profiler")
     st.write("Upload an image, edit it using the sidebar controls, and then click 'Analyze' to generate its density profile.")
 
     # --- State Management ---
@@ -112,7 +112,7 @@ def main():
                 (center_x, center_y), h_profile, v_profile = perform_advanced_analysis(normalized)
 
                 # --- Display Quantitative Metrics ---
-                st.subheader("📊 Quantitative Results")
+                st.subheader("Quantitative Results")
                 metric_col1, metric_col2 = st.columns(2)
                 metric_col1.metric("Center of Mass (X)", f"{center_x:.2f} px")
                 metric_col2.metric("Center of Mass (Y)", f"{center_y:.2f} px")

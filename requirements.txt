@@ -4,3 +4,6 @@ opencv-python
 plotly
 matplotlib
 scikit-image
+Pillow
+scipy
+streamlit-cropper

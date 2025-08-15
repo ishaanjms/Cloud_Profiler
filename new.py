@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
-from skimage import io, exposure, util, color, img_as_float
+from skimage import exposure, img_as_float
 from scipy import ndimage
 from streamlit_cropper import st_cropper
 from PIL import Image
@@ -19,7 +19,7 @@ def perform_advanced_analysis(image):
 # --- Main App ---
 def main():
     st.set_page_config(layout="centered", page_title="Image Editor & Profiler")
-    st.title("Image Editor & Density Profiler")
+    st.title("Cloud Density Profiler")
     st.write("Upload an image, crop it, adjust gamma, and analyze its density profile.")
 
     # Reset analysis state
@@ -40,15 +40,18 @@ def main():
 
         st.sidebar.header("1. Crop & Adjust Image")
         
-        # --- Crop using st_cropper ---
-        st.sidebar.write("Crop the image interactively:")
+        # --- Crop using st_cropper (square only) ---
+        st.sidebar.write("Crop the image interactively (square only):")
         cropped_img = st_cropper(
             img_pil,
             realtime_update=True,
             box_color='#FF0000',
-            aspect_ratio=None,
+            aspect_ratio=(1, 1),  # Force square crop
             return_type="image"
         )
+
+        # Force cropped image to a fixed size for analysis
+        cropped_img = cropped_img.resize((200, 200), Image.LANCZOS)
 
         # Convert cropped PIL image to NumPy float
         cropped_np = img_as_float(np.array(cropped_img))
@@ -83,9 +86,8 @@ def main():
             img_for_cv = (edited_image * 255).astype(np.uint8)
             gray_img = cv2.cvtColor(img_for_cv, cv2.COLOR_RGB2GRAY)
 
-            # Resize & normalize
-            resized = cv2.resize(gray_img, (200, 200))
-            normalized = resized / 255.0
+            # Normalized for analysis
+            normalized = gray_img / 255.0
 
             # Analysis
             (center_x, center_y), h_profile, v_profile = perform_advanced_analysis(normalized)
@@ -132,6 +134,9 @@ def main():
 
     else:
         st.info("Awaiting image upload...")
+
+if __name__ == "__main__":
+    main()
 
 if __name__ == "__main__":
     main()

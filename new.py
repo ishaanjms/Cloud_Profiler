@@ -1,9 +1,9 @@
 import streamlit as st
 import numpy as np
-import cv2
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 from skimage import exposure, img_as_float
+from skimage.color import rgb2gray  # Replaced cv2 with skimage's native converter
 from scipy import ndimage
 from streamlit_cropper import st_cropper
 from PIL import Image
@@ -83,11 +83,10 @@ def main():
         # --- Density Profiling ---
         if st.session_state.get('analysis_triggered', False):
             st.header("Density Profile Analysis")
-            img_for_cv = (edited_image * 255).astype(np.uint8)
-            gray_img = cv2.cvtColor(img_for_cv, cv2.COLOR_RGB2GRAY)
-
-            # Normalized for analysis
-            normalized = gray_img / 255.0
+            
+            # Convert directly to grayscale and normalize in one step using skimage
+            # rgb2gray automatically handles float arrays and scales them between 0.0 and 1.0
+            normalized = rgb2gray(edited_image)
 
             # Analysis
             (center_x, center_y), h_profile, v_profile = perform_advanced_analysis(normalized)
@@ -137,4 +136,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
